@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/Main.vue'
+import HomeView from '../views/HomeView.vue'
 import SingleView from '../views/SingleView.vue'
 
 const router = createRouter({
@@ -13,15 +13,14 @@ const router = createRouter({
     },
     {
       path: '/single',
-      // name: 'single',
+      name: 'single',
       component: SingleView,
-      // component: () => import('@/views/SingleView.vue'),
     },
-    // {
-    //   path: '/:pathMatch(.*)*',
-    //   name: 'NotFound',
-    //   component: () => import('@/components/icons/IconCommunity.vue'),
-    // },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      component: () => import('@/views/NotFound.vue'),
+    },
   ],
 })
 

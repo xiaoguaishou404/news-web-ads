@@ -3,7 +3,7 @@ import WebGL from 'three/addons/capabilities/WebGL.js'
 
 // import './assets/main.css'
 
-import { createApp } from 'vue'
+import { createApp   }   from 'vue'
 import { createPinia } from 'pinia'
 
 import App from './App.vue'
@@ -12,7 +12,7 @@ import HomeView from '@/views/HomeView.vue'
 
 const app = createApp(App)
 
-app.use(createPinia())
+app.use(createPinia ())
 app.use(router)
 app.mount('#app')
 
@@ -35,7 +35,6 @@ app.mount('#app')
 // const lineGeometry = new THREE.BufferGeometry().setFromPoints( points );
 
 // const line = new THREE.Line( lineGeometry, lineMaterial );
-
 
 // renderer.setSize(window.innerWidth, window.innerHeight)
 // document.body.appendChild(renderer.domElement)

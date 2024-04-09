@@ -1,13 +1,9 @@
-// require('@rushstack/eslint-patch/modern-module-resolution')
-
 import antfu from '@antfu/eslint-config'
 
 export default antfu({
-  // formatters: true,
   vue: true,
   typescript: true,
   stylistic: true,
-
   formatters: {
     /**
      * Format CSS, LESS, SCSS files, also the `<style>` blocks in Vue
@@ -31,28 +27,12 @@ export default antfu({
   //   quotes: 'single', // or 'double'
   // },
 },
-// {
-//   root: true,
-//   'extends': [
-//     'plugin:vue/vue3-essential',
-//     'eslint:recommended',
-//     '@vue/eslint-config-typescript',
-//     'plugin:vue/vue3-strongly-recommended'
-//   ],
-//   parserOptions: {
-//     ecmaVersion: 'latest'
-//   },
-//   rules: {
-//     "vue/max-attributes-per-line": ["error", {
-//       "singleline": {
-//         "max": 20
-//       },
-//       "multiline": {
-//         "max": 20
-//       }
-//     }],
-//   }
-// }
 )
 
-/* eslint-env node */
+
+// 如果使用antfu/eslint-config的配置单，
+// 里面包含了vue项目基础的语法检测配置
+
+// 如果不想使用eslint格式化代码方案，同时搭配Prettier代码格式化方案
+// 去git历史找项目刚创建的.eslintrc.cjs文件。里面是vue项目的基础eslint配置
+
