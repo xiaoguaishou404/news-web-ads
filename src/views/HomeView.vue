@@ -1,135 +1,63 @@
 <script setup lang="ts">
+import { NVirtualList } from 'naive-ui'
+import { ref } from 'vue'
+
 import axios from 'axios'
-import { RouterLink } from 'vue-router'
-import '@/assets/css/bootstrap.min.css'
-import '@/assets/css/font-awesome/css/font-awesome.min.css'
-import '@/assets/css/style.css'
-import '@/assets/js/bootstrap.min.js'
-// import '@/assets/js/modernizr.js'
+// import { RouterLink } from 'vue-router'
+
+import HeaderTop from '@/components/HeaderTop.vue'
+import ArticleCard from '@/components/ArticleCard.vue'
+
+// axios.get('https://dc-online-catalog.xod.zyte.group/json/article/yahoo.com').then((response) => {
+//   console.log(response.data)
+// })
 
 // axios.get('https://newsdata.io/api/1/news?apikey=pub_416247a8e9c8c25b857dc9c8602f112ea7358&q=pizza').then((response) => {
 //   console.log(response.data)
 // })
 
-axios.get('api.goperigon.com/v1/all?apiKey=[KEY]&from=2024-04-07&sortBy=date&q=inflation AND prices').then((response) => {
-  console.log(response.data)
-})
+
+
+// axios.get('api.goperigon.com/v1/all?apiKey=[KEY]&from=2024-04-07&sortBy=date&q=inflation AND prices').then((response) => {
+//   console.log(response.data)
+// })
+
+const count = ref(2)
+function load() {
+  count.value += 10
+}
 </script>
 
 <template>
-  <div>
-    <header>
-      <div class="widewrapper masthead">
-        <div class="container">
-          <a id="logo" href="index.html">
-            <img src="@/assets/img/logo.png" alt="clean Blog">
-          </a>
-
-          <div id="mobile-nav-toggle" class="pull-right">
-            <a href="#" data-toggle="collapse" data-target=".clean-nav .navbar-collapse">
-              <i class="fa fa-bars" />
-            </a>
-          </div>
-
-          <nav class="pull-right clean-nav">
-            <div class="collapse navbar-collapse">
-              <ul class="nav nav-pills navbar-nav">
-                <li>
-                  <a href="index.html">Home</a>
-                </li>
-                <li>
-                  <a href="about.html">About</a>
-                </li>
-                <li>
-                  <a href="contact.html">Contact</a>
-                </li>
-              </ul>
-            </div>
-          </nav>
-        </div>
-      </div>
-
-      <div class="widewrapper subheader">
-        <div class="container">
-          <div class="clean-breadcrumb">
-            <a href="#">Blog</a>
-          </div>
-
-          <div class="clean-searchbox">
-            <form action="#" method="get" accept-charset="utf-8">
-              <input id="searchbox" class="searchfield" type="text" placeholder="Search">
-              <button class="searchbutton" type="submit">
-                <i class="fa fa-search" />
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </header>
-
+  <div class="aa" v-infinite-scroll="load" infinite-scroll-distance="10" infinite-scroll-delay="10" style="overflow: auto">
+    <HeaderTop />
     <div class="widewrapper main">
       <div class="container">
         <div class="row">
-          <div class="col-md-8 blog-main">
-            <div v-for="item in [1, 2, 3, 4, 5]" :key="item" class="row">
-              <div class="col-md-6 col-sm-6">
-                <article class=" blog-teaser">
-                  <header>
-                    <img src="@/assets/img/1.jpg" alt="">
-                    <h3>
-                      <!-- <a href="single.html">How to Create Template</a> -->
-                      <RouterLink to="single" class="btn btn-clean-one">
-                        Read more
-                      </RouterLink>
-                    </h3>
-                    <span class="meta">19 August 2015, John Doe</span>
-                    <hr>
-                  </header>
-                  <div class="body">
-                    Lorem ipsum dolor sit amet, consectetur adipisicing elit. Voluptatum, sit. Doloribus dolores neque eos. Velit eveniet, necessitatibus aut sit tenetur perferendis! Commodi pariatur dignissimos, quis sequi odit iusto cumque quod!
-                  </div>
-                  <div class="clearfix">
-                    <!-- <a href="single.html" class="btn btn-clean-one">Read more</a> -->
-                    <RouterLink to="single" class="btn btn-clean-one">
-                      Read more
-                    </RouterLink>
-                  </div>
-                </article>
-              </div>
-              <div class="col-md-6 col-sm-6">
-                <article class="blog-teaser">
-                  <header>
-                    <img src="@/assets/img/2.jpg" alt="">
-                    <h3>
-                      <!-- <a href="single.html">Clean Personal Blog Template</a> -->
-                      <RouterLink to="single" class="btn btn-clean-one">
-                        Read more
-                      </RouterLink>
-                    </h3>
-                    <span class="meta">19 August 2015, John Doe</span>
-                    <hr>
-                  </header>
-                  <div class="body">
-                    Lorem ipsum dolor sit amet, consectetur adipisicing elit. Voluptatum, sit. Doloribus dolores neque eos. Velit eveniet, necessitatibus aut sit tenetur perferendis! Commodi pariatur dignissimos, quis sequi odit iusto cumque quod!
-                  </div>
-                  <div class="clearfix">
-                    <!-- <a href="single.html" class="btn btn-clean-one">Read more</a> -->
-                    <RouterLink to="single" class="btn btn-clean-one">
-                      Read more
-                    </RouterLink>
-                  </div>
-                </article>
-              </div>
+          <!-- <div class="col-md-8 blog-main">
+            <div v-for="item in new Array(20)" :key="item" class="row">
+              
             </div>
+          </div> -->
+          
 
-            <div class="paging">
-              <a href="#" class="older">Older Post</a>
-            </div>
-          </div>
+          <ul  class="infinite-list col-md-8 blog-main" >
+            <li v-for="i in count" :key="i" class="infinite-list-item row">
+              <ArticleCard />
+              <ArticleCard />
+            </li>
+          </ul>
+
+    
+
+          <!-- <div class="paging">
+            <a href="#" class="older">Older Post</a>
+          </div> -->
+
           <aside class="col-md-4 blog-aside">
             <div class="aside-widget">
               <header>
-                <h3>Featured Post</h3>
+                <h3>More news</h3>
               </header>
               <div class="body">
                 <ul class="clean-list">
@@ -139,40 +67,6 @@ axios.get('api.goperigon.com/v1/all?apiKey=[KEY]&from=2024-04-07&sortBy=date&q=i
                   <li><a href="">Blackor Responsive Theme</a></li>
                   <li><a href="">Portfolio Bootstrap Template</a></li>
                   <li><a href="">Clean Slider Template</a></li>
-                </ul>
-              </div>
-            </div>
-
-            <div class="aside-widget">
-              <header>
-                <h3>Related Post</h3>
-              </header>
-              <div class="body">
-                <ul class="clean-list">
-                  <li><a href="">Blackor Responsive Theme</a></li>
-                  <li><a href="">Portfolio Bootstrap Template</a></li>
-                  <li><a href="">Clean Slider Template</a></li>
-                  <li><a href="">Clean - Responsive HTML5 Template</a></li>
-                  <li><a href="">Responsive Pricing Table</a></li>
-                  <li><a href="">Yellow HTML5 Template</a></li>
-                </ul>
-              </div>
-            </div>
-
-            <div class="aside-widget">
-              <header>
-                <h3>Tags</h3>
-              </header>
-              <div class="body clearfix">
-                <ul class="tags">
-                  <li><a href="#">HTML5</a></li>
-                  <li><a href="#">CSS3</a></li>
-                  <li><a href="#">COMPONENTS</a></li>
-                  <li><a href="#">TEMPLATE</a></li>
-                  <li><a href="#">PLUGIN</a></li>
-                  <li><a href="#">BOOTSTRAP</a></li>
-                  <li><a href="#">TUTORIAL</a></li>
-                  <li><a href="#">UI/UX</a></li>
                 </ul>
               </div>
             </div>
@@ -221,3 +115,27 @@ axios.get('api.goperigon.com/v1/all?apiKey=[KEY]&from=2024-04-07&sortBy=date&q=i
   </div>
 </template>
 
+<style scoped>
+.aa{
+  height: 100vh;
+}
+
+.infinite-list {
+  /* height: 2100px; */
+  /* padding: 0;
+  margin: 0;
+  list-style: none; */
+}
+/* .infinite-list .infinite-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  background: var(--el-color-primary-light-9);
+  margin: 10px;
+  color: var(--el-color-primary);
+} */
+.infinite-list .infinite-list-item + .list-item {
+  margin-top: 10px;
+}
+</style>

@@ -3,41 +3,12 @@ import '@/assets/css/bootstrap.min.css'
 import '@/assets/css/font-awesome/css/font-awesome.min.css'
 import '@/assets/css/style.css'
 import '@/assets/js/bootstrap.min.js'
+import HeaderTop from '@/components/HeaderTop.vue'
 </script>
 
 <template>
   <div>
-    <header>
-      <div class="widewrapper masthead">
-        <div class="container">
-          <a id="logo" href="index.html">
-            <img src="@/assets/img/logo.png" alt="clean Blog">
-          </a>
-
-          <div id="mobile-nav-toggle" class="pull-right">
-            <a href="#" data-toggle="collapse" data-target=".clean-nav .navbar-collapse">
-              <i class="fa fa-bars" />
-            </a>
-          </div>
-
-          <nav class="pull-right clean-nav">
-            <div class="collapse navbar-collapse">
-              <ul class="nav nav-pills navbar-nav">
-                <li>
-                  <a href="index.html">Home</a>
-                </li>
-                <li>
-                  <a href="about.html">About</a>
-                </li>
-                <li>
-                  <a href="contact.html">Contact</a>
-                </li>
-              </ul>
-            </div>
-          </nav>
-        </div>
-      </div>
-    </header>
+    <HeaderTop />
 
     <div class="widewrapper main">
       <div class="container">

@@ -12,7 +12,7 @@ const router = createRouter({
       component: HomeView,
     },
     {
-      path: '/single',
+      path: '/single/:id',
       name: 'single',
       component: SingleView,
     },
