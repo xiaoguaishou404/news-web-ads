@@ -85,11 +85,11 @@ Font Awesome Icons
 }
 
 .widewrapper.subheader {
-  background-color: #f1f1f1;
+  background-color: #1d2129;
   color: #444;
   font-size: 16px;
   min-height: 63px;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid #000000;
   border-bottom: 1px solid #ddd;
 }
 
@@ -639,7 +639,7 @@ Blog styles
 }
 
 .aside-widget header {
-  background-color: #f1f1f1;
+  background-color: #1d2129;
   border-bottom: 1px solid #ddd;
 }
 
@@ -699,6 +699,7 @@ The blog main page boxes
     float: none;
     width: 95%;
   }
+
 }
 
 .blog-teaser header {

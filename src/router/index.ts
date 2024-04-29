@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import SingleView from '../views/SingleView.vue'
+import mainPage from '../views/mainPage.vue'
 
 const router = createRouter({
 
@@ -8,11 +9,16 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      name: 'index',
+      component: mainPage,
+    },
+    {
+      path: '/home',
       name: 'home',
       component: HomeView,
     },
     {
-      path: '/single/:id',
+      path: '/single/:data',
       name: 'single',
       component: SingleView,
     },

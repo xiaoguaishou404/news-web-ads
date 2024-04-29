@@ -1,58 +1,128 @@
 <script setup lang="ts">
 import { NVirtualList } from 'naive-ui'
-import { ref } from 'vue'
-
+import { Ref, computed, onMounted, ref } from 'vue'
 import axios from 'axios'
+import Breadcrumb from '@/components/Breadcrumb.vue'
+import pageFooter from '@/components/pageFooter.vue'
+
 // import { RouterLink } from 'vue-router'
 
 import HeaderTop from '@/components/HeaderTop.vue'
 import ArticleCard from '@/components/ArticleCard.vue'
 
-// axios.get('https://dc-online-catalog.xod.zyte.group/json/article/yahoo.com').then((response) => {
-//   console.log(response.data)
-// })
+const newsList = ref([])
+let nextPage = ''
+const newCardleftItem = ref(null)
+const newCardRightItem = ref(null)
+const doubleCount = computed(() =>
+  newsList.value.filter(item => ![newCardleftItem.value.article_id, newCardRightItem.value.article_id].includes(item.article_id)),
+)
 
-// axios.get('https://newsdata.io/api/1/news?apikey=pub_416247a8e9c8c25b857dc9c8602f112ea7358&q=pizza').then((response) => {
-//   console.log(response.data)
-// })
+function changeCard(item) {
+  newCardleftItem.value = item
+  const leftIndex = newsList.value.findIndex(val => val.link === item.link)
 
+  if (newsList.value[leftIndex + 1])
+    newCardRightItem.value = newsList.value[leftIndex + 1]
 
-
-// axios.get('api.goperigon.com/v1/all?apiKey=[KEY]&from=2024-04-07&sortBy=date&q=inflation AND prices').then((response) => {
-//   console.log(response.data)
-// })
-
-const count = ref(2)
-function load() {
-  count.value += 10
+  else
+    newCardRightItem.value = newsList.value[0]
 }
+
+function searchCard(val = '') {
+// https://newsdata.io/api/1/news?apikey= pub_416247a8e9c8c25b857dc9c8602f112ea7358 &q=pegasus&language=en
+  axios({
+    url: `https://server.bigfullnews.xyz/ads/getNewsByCount`,
+    method: 'get',
+    params: {
+      channel: 'sls',
+      count: 10,
+      q: val,
+    },
+  }).then((response) => {
+    newsList.value = response.data.data.filter(item => item.image_url)
+    newCardleftItem.value = newsList.value[0]
+    newCardRightItem.value = newsList.value[1]
+  })
+}
+onMounted(() => {
+  axios({
+    url: `https://server.bigfullnews.xyz/ads/getNewsByCount`,
+    method: 'get',
+    params: {
+      channel: 'sls',
+      count: 10,
+    },
+  },
+
+  ).then((response) => {
+    const filterResult = response.data.data.filter(item => item.image_url).sort(() => (Math.random() - 0.5))
+
+    nextPage = response.data.nextPage
+    newCardleftItem.value = filterResult[0]
+    newCardRightItem.value = filterResult[1]
+    newsList.value = filterResult
+  })
+
+  //   import('../../nodeServe/newsList.json').then((response) => {
+  //     newsList.value = response.default.sort(() => (Math.random() - 0.5)).splice(0, 10).filter(item => item.image_url)
+
+  //     // nextPage = response.data.nextPage
+  //     newCardleftItem.value = newsList.value[0]
+  //     newCardRightItem.value = newsList.value[1]
+  //   })
+})
+
+// axios.get(`https://api.goperigon.com/v1/all?source=cnn.com&sortBy=date&apiKey=81171d2f-df92-4c4e-b070-4de0243a6ae2`).then((response) => {
+//   console.log(response.data)
+// })
 </script>
 
 <template>
-  <div class="aa" v-infinite-scroll="load" infinite-scroll-distance="10" infinite-scroll-delay="10" style="overflow: auto">
+  <div>
     <HeaderTop />
+    <Breadcrumb @search="searchCard" />
+
+    <Brecrumb @search="searchCard" />
+
     <div class="widewrapper main">
       <div class="container">
         <div class="row">
           <!-- <div class="col-md-8 blog-main">
             <div v-for="item in new Array(20)" :key="item" class="row">
-              
+
             </div>
           </div> -->
-          
+          <div class="AdvertisingCard">
+            <h1>广告位</h1>
+          </div>
 
-          <ul  class="infinite-list col-md-8 blog-main" >
-            <li v-for="i in count" :key="i" class="infinite-list-item row">
-              <ArticleCard />
-              <ArticleCard />
-            </li>
-          </ul>
+          <div class="col-md-8 blog-main">
+            <ArticleCard v-if="newCardleftItem" :article-data="newCardleftItem" />
+            <ArticleCard v-if="newCardRightItem" :article-data="newCardRightItem" />
+            <!-- <div  class="AdvertisingCard"> -->
+            <h1 class="FloatAdvertisingCard floatleft">
+              广告位
+            </h1>
+            <!-- </div> -->
+            <ArticleCard v-if="newCardleftItem" :article-data="newCardleftItem" />
+            <ArticleCard v-if="newCardRightItem" :article-data="newCardRightItem" />
+            <div class="paging">
+              <a class="btn btn-clean-one older" href="#">TOP</a>
+              <div class="clearfix">
+                <!-- <a target="_blank" class="btn btn-clean-one" :href="articleData.link">read the full article</a> -->
+              </div>
+            </div>
 
-    
-
-          <!-- <div class="paging">
-            <a href="#" class="older">Older Post</a>
-          </div> -->
+            <!-- <ArticleCard v-if="newCardleftItem" :article-data="newCardleftItem" />
+            <ArticleCard v-if="newCardRightItem" :article-data="newCardRightItem" />
+            <ArticleCard v-if="newCardleftItem" :article-data="newCardleftItem" />
+            <ArticleCard v-if="newCardRightItem" :article-data="newCardRightItem" />
+            <ArticleCard v-if="newCardleftItem" :article-data="newCardleftItem" />
+            <ArticleCard v-if="newCardRightItem" :article-data="newCardRightItem" /> -->
+            <!-- <li v-for="item, index in newsList[0]" :key="index" class="infinite-list-item row">
+            </li> -->
+          </div>
 
           <aside class="col-md-4 blog-aside">
             <div class="aside-widget">
@@ -60,82 +130,52 @@ function load() {
                 <h3>More news</h3>
               </header>
               <div class="body">
-                <ul class="clean-list">
-                  <li><a href="">Clean - Responsive HTML5 Template</a></li>
-                  <li><a href="">Responsive Pricing Table</a></li>
-                  <li><a href="">Yellow HTML5 Template</a></li>
-                  <li><a href="">Blackor Responsive Theme</a></li>
-                  <li><a href="">Portfolio Bootstrap Template</a></li>
-                  <li><a href="">Clean Slider Template</a></li>
+                <ul v-if="newsList.length > 0" class="clean-list pad">
+                  <div v-for="item, index in doubleCount.splice(0, 3)" :key="index" :style="{ display: 'flex', alignItems: 'center', margin: '20px 0' }">
+                    <div :style="{ width: '50px', height: '50px', marginRight: '10px' }">
+                      <img :style="{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover' }" :src=" item.image_url " alt="" srcset="">
+                    </div>
+                    <!-- <div @click="changeCard(item)">
+                      {{ item.title }}
+                    </div> -->
+                    <RouterLink :to="{ name: 'single', params: { data: JSON.stringify(item) } }">
+                      {{ item.title }}
+                    </RouterLink>
+                  </div>
                 </ul>
               </div>
             </div>
           </aside>
         </div>
+
+        <!-- <div class="paging">
+            <a href="#" class="older">Older Post</a>
+          </div> -->
+
+        <div class="AdvertisingCard">
+          <h1>广告位</h1>
+        </div>
+        <br>
       </div>
     </div>
 
-    <footer>
-      <div class="widewrapper footer">
-        <div class="container">
-          <div class="row">
-            <div class="col-md-4 footer-widget">
-              <h3> <i class="fa fa-user" />About</h3>
-
-              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ab animi laboriosam nostrum consequatur fugiat at, labore praesentium modi, quasi dolorum debitis reiciendis facilis, dolor saepe sint nemo, earum molestias quas.</p>
-              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolorum, error aspernatur assumenda quae eveniet.</p>
-            </div>
-
-            <div class="col-md-4 footer-widget">
-              <h3> <i class="fa fa-pencil" /> Recent Post</h3>
-              <ul class="clean-list">
-                <li><a href="">Clean - Responsive HTML5 Template</a></li>
-                <li><a href="">Responsive Pricing Table</a></li>
-                <li><a href="">Yellow HTML5 Template</a></li>
-                <li><a href="">Blackor Responsive Theme</a></li>
-                <li><a href="">Portfolio Bootstrap Template</a></li>
-                <li><a href="">Clean Slider Template</a></li>
-              </ul>
-            </div>
-
-            <div class="col-md-4 footer-widget">
-              <h3> <i class="fa fa-envelope" />Contact Me</h3>
-
-              <p>Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet.</p>
-              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Nihil fugiat, cupiditate veritatis excepturi tempore explicabo.</p>
-              <div class="footer-widget-icon">
-                <i class="fa fa-facebook" /><i class="fa fa-twitter" /><i class="fa fa-google" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="widewrapper copyright" />
-    </footer>
+    <pageFooter />
   </div>
 </template>
 
-<style scoped>
-.aa{
-  height: 100vh;
+<style>
+.pad {
+  padding: 10px;
 }
-
-.infinite-list {
-  /* height: 2100px; */
-  /* padding: 0;
-  margin: 0;
-  list-style: none; */
+.FloatAdvertisingCard {
+  width: 100%;
+  height: 300px;
+  border: 1px solid;
+  margin: 10px 0;
 }
-/* .infinite-list .infinite-list-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 50px;
-  background: var(--el-color-primary-light-9);
-  margin: 10px;
-  color: var(--el-color-primary);
-} */
-.infinite-list .infinite-list-item + .list-item {
-  margin-top: 10px;
+@media (min-width: 768px) {
+  .floatleft {
+    float: left;
+  }
 }
 </style>

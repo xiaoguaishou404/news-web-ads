@@ -1,0 +1,5 @@
+img[lazy='loading'] {
+    padding: 30px;
+    /* 无限旋转 */
+    animation: rotate 3s linear infinite;
+  }
