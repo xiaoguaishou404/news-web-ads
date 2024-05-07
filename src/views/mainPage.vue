@@ -1,17 +1,8 @@
 <script setup lang="ts">
-import { NVirtualList } from 'naive-ui'
 import { Ref, computed, onMounted, ref } from 'vue'
 import axios from 'axios'
 import InfiniteLoading from 'v3-infinite-loading'
-import Breadcrumb from '@/components/Breadcrumb.vue'
-import pageFooter from '@/components/pageFooter.vue'
 import 'v3-infinite-loading/lib/style.css'
-
-// import { RouterLink } from 'vue-router'
-
-import HeaderTop from '@/components/HeaderTop.vue'
-import ArticleCard from '@/components/ArticleCard.vue'
-// required if you're not going to override default slots
 
 async function loadData($state) {
   // calling the api
@@ -217,6 +208,12 @@ img[lazy='loading'] {
 </style>
 
 <style lang="less" scoped>
+.AdvertisingCard {
+  width: 100%;
+  height: 200px;
+  border: 1px solid;
+  margin: 10px 0;
+}
 .title {
   text-align: center;
 }

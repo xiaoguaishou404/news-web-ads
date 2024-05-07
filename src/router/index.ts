@@ -1,6 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import SingleView from '../views/SingleView.vue'
 import mainPage from '../views/mainPage.vue'
 
 const router = createRouter({
@@ -12,61 +10,14 @@ const router = createRouter({
       name: 'index',
       component: mainPage,
     },
-    {
-      path: '/home',
-      name: 'home',
-      component: HomeView,
-    },
-    {
-      path: '/single/:data',
-      name: 'single',
-      component: SingleView,
-    },
-    {
-      path: '/:pathMatch(.*)*',
-      name: 'NotFound',
-      component: () => import('@/views/NotFound.vue'),
-    },
+    
+    // {
+    //   path: '/:pathMatch(.*)*',
+    //   name: 'NotFound',
+    //   component: () => import('@/views/NotFound.vue'),
+    // },
   ],
 })
 
-// let hasr = false
-// router.beforeEach((to, from, next) => {
-//   console.log({ to })
-//   if (hasr) {
-//     console.log(11)
-
-//     next()
-//   }
-//   else {
-//     router.addRoute({
-//       path: '/aa',
-//       name: 'aa',
-//       component: () => import('@/views/AboutView.vue'),
-//       children: [
-//         {
-//           path: 'ww',
-//           name: 'ww',
-//           component: () => import('@/components/icons/IconCommunity.vue'),
-//         },
-//       ],
-//     })
-//     // router.addRoute({
-//     //   path: '/:pathMatch(.*)*',
-//     //  name: 'NotFound',
-//     //   component: () => import('@/components/icons/IconCommunity.vue')
-//     // });
-//     hasr = true
-//     console.log(5566)
-//     console.log(to)
-
-//     next({ path: to.path, name: to.name })
-//     // next( to);
-//   }
-
-//   console.log(router.getRoutes())
-
-//   // next(to.path);
-// })
 
 export default router
