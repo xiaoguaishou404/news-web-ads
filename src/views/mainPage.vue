@@ -121,7 +121,7 @@ function formatDate(dateString) {
 }
 function toLink(url) {
   // 链接跳转
-  window.open(url)
+  // window.open(url)
 }
 const title = ref('')
 title.value = getTopLevelDomainWithoutPort()
@@ -164,7 +164,10 @@ onMounted(() => {
           <img v-lazy="group[0].image_url" alt="">
         </div>
         <div class="message">
-          <h2>{{ group[0].title }}</h2>
+          <RouterLink :to="`/singlePage/${group[0].article_id}`">
+            <h2>{{ group[0].title }}</h2>
+          </RouterLink>
+
           <div class="info">
             <div class="keyWord">
               {{ group[0].creator?.join(' ') }}
@@ -182,7 +185,10 @@ onMounted(() => {
             <img v-lazy="item.image_url || ' '" alt="">
           </div>
           <div class="message">
-            <h4>{{ item.title }}</h4>
+            <RouterLink :to="`/singlePage/${item.article_id}`">
+              <h4>{{ item.title }}</h4>
+            </RouterLink>
+
             <div class="info">
               <div class="keyWord">
                 {{ group[0].source_id }}

@@ -1,7 +1,7 @@
 const { execSync } = require('node:child_process')
 
 // 定义你的环境配置文件列表
-const sites = ['thedailyscrollnews', 'breakingedgenews','buzzfeednews']
+const sites = ['thedailyscrollnews', 'breakingedgenews','buzzfeednews','bigfullnews']
 
 sites.forEach((site) => {
   console.log(`开始打包：${site}`)

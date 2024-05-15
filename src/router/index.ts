@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import mainPage from '../views/mainPage.vue'
+import SinglePage from '../views/SinglePage.vue'
 
 const router = createRouter({
 
@@ -7,17 +8,20 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'index',
+      name: 'mainPage',
       component: mainPage,
     },
-    
-    // {
-    //   path: '/:pathMatch(.*)*',
-    //   name: 'NotFound',
-    //   component: () => import('@/views/NotFound.vue'),
-    // },
+    {
+      path: '/singlePage/:id',
+      name: 'singlePage',
+      component: SinglePage,
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      component: () => import('@/views/NotFound.vue'),
+    },
   ],
 })
-
 
 export default router
