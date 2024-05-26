@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
-import { onMounted, ref, watch } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import { onActivated, onMounted, ref, watch } from 'vue'
 import axios from 'axios'
 
+const router = useRouter()
 const newCardleftItem = ref(null)
 const newCardRightItem = ref(null)
 
@@ -11,24 +12,30 @@ const newsList = ref([])
 const articleData = ref({})
 const ArticleBody = ref('')
 const articleBodyref = ref(null)
+const scrollTop = ref(0)
 
-// watch(() => route.params.data, () => {
+onBeforeRouteLeave((to, from) => {
+  scrollTop.value = document.getElementById('app').scrollTop
+})
 
-//   getActicleBody()
-// })
+onActivated(() => {
+  document.getElementById('app').scrollTop = scrollTop.value
+})
+
 function getActicleBody() {
   // window.scrollTo(0, 0)
 
   axios({
     method: 'get',
-    url: 'https://server.bigfullnews.xyz/ads/getNewsArticle',
+    url: 'https://server.gyhserver.com/ads/getNewsArticle',
+    // url: 'http://192.168.1.124:8081/ads/getNewsArticle',
     data: {
       article: true,
       httpResponseBody: true,
       articleOptions: { extractFrom: 'httpResponseBody' },
     },
     params: {
-      channel: 'sls',
+      channel: import.meta.env.VITE_BUILD_SITE,
       articleId: route.params.id,
     },
 
@@ -37,23 +44,75 @@ function getActicleBody() {
   ).then((response: any) => {
     const article = response.data.data.articleBodyHtml
 
-    ArticleBody.value = article
-    articleData.value = response.data.data
-    setTimeout(() => {
-      console.log(articleBodyref.value.querySelectorAll ('p'))
-      articleBodyref.value.querySelectorAll ('p').forEach((item: any, index) => {
-        if (index % 5 === 0) {
-          const advertisingDiv = document.createElement('div')
-          advertisingDiv.className = 'AdvertisingCard'
-          advertisingDiv.textContent = '广告位'
-          item.parentNode.insertBefore(advertisingDiv, item)
-          // 滚动到顶部
-          window.scrollTo(0, 0)
-        }
-      })
-    })
+    if (response.data) {
+      if (!article) {
+        console.log(article)
+        console.log(response.data)
+
+        // window.open(response.data.data.url)
+        // sessionStorage.removeItem(window.location.href)
+        window.location.href = response.data.data.url
+        router.replace({ path: '/' })
+      }
+      else {
+        ArticleBody.value = removeElementsFromHtml(article)
+        articleData.value = response.data.data
+
+        setTimeout(() => {
+          articleBodyref.value.querySelectorAll('p').forEach((item: any, index) => {
+            if (index % 5 === 0 && index !== 0) {
+              const style = window.getComputedStyle ? window.getComputedStyle(item, null) : null || item.currentStyle
+              // console.log(Number.parseFloat(style.width))
+              // console.log(window.screen.width * 0.8)
+
+              if (Number.parseFloat(style.width) < window.screen.width * 0.8)
+                return
+              const advertisingDiv = document.createElement('div')
+              advertisingDiv.className = 'AdvertisingCard'
+              advertisingDiv.textContent = 'advertising'
+              item.parentNode.insertBefore(advertisingDiv, item)
+              // 滚动到顶部
+              // window.scrollTo(0, 0)
+            }
+          })
+        })
+      }
+    }
   })
 }
+
+function removeElementsFromHtml(htmlString) {
+  // 创建一个临时的DOM元素来解析HTML字符串
+  const temporaryElement = document.createElement('div')
+  temporaryElement.innerHTML = htmlString
+
+  // 递归删除临时元素的所有子元素中的图片和视频元素
+  function removeElements(element) {
+    const children = element.children
+
+    for (let i = children.length - 1; i >= 0; i--) {
+      const child = children[i]
+
+      // 如果子元素是图片或视频元素，则删除它
+      if (child.tagName === 'IMG' || child.tagName === 'VIDEO') {
+        child.remove()
+      }
+      else {
+        // 如果子元素不是图片或视频元素，则递归删除它的子元素
+        removeElements(child)
+      }
+    }
+  }
+
+  // 调用递归函数删除临时元素的子元素中的图片和视频元素
+  removeElements(temporaryElement)
+
+  // 将临时元素的内容转换回HTML字符串
+  const cleanedHtmlString = temporaryElement.innerHTML
+
+  return cleanedHtmlString
+}
+
 function convertDatetimeToString(datetimeStr) {
   const datetimeParts = datetimeStr.split(/[T:-]/)
   const year = datetimeParts[0]
@@ -66,11 +125,72 @@ function convertDatetimeToString(datetimeStr) {
 onMounted(() => {
   getActicleBody()
 })
+const nowcount = Math.floor(Math.random() * 40)
+
+const newNewsList = ref([])
+function getNews() {
+  return axios({
+    url: `https://server.gyhserver.com/ads/getNewsByPage`,
+    // url: `http://192.168.1.124:8081/ads/getNewsByPage`,
+    method: 'get',
+    params: {
+      channel: import.meta.env.VITE_BUILD_SITE,
+      count: 3,
+      start: nowcount,
+      end: 3 + nowcount,
+    },
+  },
+
+  ).then(async (response) => {
+    const filterResult = response.data.data
+    newNewsList.value = filterResult
+  })
+}
+getNews()
+function formatDate(dateString) {
+  const date = new Date(dateString)
+  const now = new Date()
+
+  const diffInSeconds = Math.floor((now - date) / 1000)
+  const diffInMinutes = Math.floor(diffInSeconds / 60)
+  const diffInHours = Math.floor(diffInMinutes / 60)
+  const diffInDays = Math.floor(diffInHours / 24)
+
+  if (diffInSeconds < 60)
+    return `${diffInSeconds} seconds ago`
+  else if (diffInMinutes < 60)
+    return `${diffInMinutes} minutes ago`
+  else if (diffInHours < 24)
+    return `${diffInHours} hours ago`
+  else
+    return `${diffInDays} days ago`
+}
+function toLink(item) {
+  axios({
+    method: 'get',
+    url: 'https://server.gyhserver.com/ads/getNewsArticle',
+    // url: 'http://192.168.1.124:8081/ads/getNewsArticle',
+    data: {
+      article: true,
+      httpResponseBody: true,
+      articleOptions: { extractFrom: 'httpResponseBody' },
+    },
+    params: {
+      channel: import.meta.env.VITE_BUILD_SITE,
+      articleId: item.article_id,
+    },
+
+  },
+
+  ).then((response) => {
+    router.push(`/singlePage/${item.article_id}`)
+  })
+}
+const envDomain = import.meta.env.VITE_DOMAIN
 </script>
 
 <template>
   <div>
-    <!-- <HeaderTop /> -->
     <div class="widewrapper subheader">
       <div class="container">
         <div class="clean-breadcrumb">
@@ -82,7 +202,7 @@ onMounted(() => {
     </div>
 
     <div class="AdvertisingCard">
-      <h1>广告位</h1>
+      <h1>advertising</h1>
     </div>
     <div class="widewrapper main">
       <div class="container">
@@ -90,16 +210,17 @@ onMounted(() => {
           <div class="col-md-8 blog-main">
             <article v-if="articleData.headline" class="blog-post">
               <header>
-                <!-- <div class="lead-image">
-                  <img :src=" articleData.mainImage?.url " alt="" class="img-responsive">
-                </div> -->
+                <div class="lead-image">
+                  <img :src=" articleData.image_url " style="width: 100%;" alt="" class="img-responsive">
+                </div>
               </header>
 
               <div class="body">
                 <h3>{{ articleData.headline }}</h3>
                 <hr>
                 <div style="width: 100%;display: flex;justify-content: end;">
-                  <strong>{{ convertDatetimeToString(articleData.dateModified) }}</strong>
+                  <strong v-if="articleData.dateModified">{{ convertDatetimeToString(articleData.dateModified)
+                  }}</strong>
                 </div>
                 <!-- <hr> -->
 
@@ -113,16 +234,63 @@ onMounted(() => {
               </div>
             </article>
 
+            <div v-else>
+              This press request has been submitted, please try again later
+            </div>
+
             <!-- <aside class="social-icons clearfix">
               <h3>Share on </h3>
               <a href="#"><i class="fa fa-facebook" /></a> <a href="#"><i class="fa fa-twitter" /></a> <a href="#"><i class="fa fa-google" /></a>
             </aside> -->
           </div>
+
+          <div class="card">
+            <div class="MoreNews">
+              <strong>
+                MORE NEWS
+              </strong>
+            </div>
+            <div class="main">
+              <div v-for="item, index in newNewsList" :key="index" class="item" @click="toLink(item)">
+                <div class="bgc">
+                  <img v-lazy="item.image_url || ' '" alt="">
+                  <!-- <img :src="item.image_url " alt="" @error="imgOnError"> -->
+                </div>
+                <div class="message">
+                  <div>
+                    <h4>{{ item.title }}</h4>
+                  </div>
+
+                  <div class="info">
+                    <div class="keyWord">
+                      {{ item.source_id }}
+                    </div>
+                    <div class="time">
+                      {{ formatDate(item.pubDate) }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <pageFooter />
+    <!-- <pageFooter /> -->
+  </div>
+  <div class="widewrapper subheader">
+    <div class="pageFooter">
+      <span>
+        ©2024 {{ envDomain }} All Rights Reserved
+      </span>
+      <span>
+        <a href="https://www.termsfeed.com/live/bfb91ebb-8c45-4917-b408-0a1437c0e638" target="_blank">Privacy Policy</a>
+      </span>
+      <span>
+        Contact us at : tulaybultak@gmail.com
+      </span>
+    </div>
   </div>
 </template>
 
@@ -132,5 +300,71 @@ onMounted(() => {
   height: 200px;
   border: 1px solid;
   margin: 10px 0;
+}
+</style>
+
+<style lang="less" scoped>
+.MoreNews {
+  width: 100%;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  font-size: 14px;
+  color: #000;
+  // border底部下划线
+  border-bottom: 1px dashed #000;
+
+  margin-bottom: 10px;
+}
+::v-deep img {
+  max-width: 100%;
+}
+
+::v-deep video {
+  max-width: 100%;
+}
+
+.card {
+  .main {
+    padding: 0px 20px;
+
+    .item {
+      display: flex;
+      padding: 10px 0px;
+      // border底部下划线虚线
+      border-bottom: 1px solid #000;
+      margin-bottom: 10px;
+
+      .bgc {
+        flex-shrink: 0;
+        width: 100px;
+        height: 100px;
+        background-color: rgb(202, 202, 202);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      img {
+        width: 100%;
+        height: 100%;
+        // 图片不拉伸
+        object-fit: cover;
+      }
+
+      .message {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 4px 0 4px 10px;
+
+        .info {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-between;
+        }
+      }
+    }
+  }
 }
 </style>

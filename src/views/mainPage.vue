@@ -1,106 +1,56 @@
 <script setup lang="ts">
-import { Ref, computed, onMounted, ref } from 'vue'
+import { Ref, computed, onActivated, onMounted, ref } from 'vue'
 import axios from 'axios'
-import InfiniteLoading from 'v3-infinite-loading'
 import 'v3-infinite-loading/lib/style.css'
+import { onBeforeRouteEnter, onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 
-async function loadData($state) {
-  // calling the api
-
-  try {
-    const response = await getNews()
-    const json = await response.json()
-    if (json.length < 10) { $state.complete() }
-    else {
-      comments.value.push(...json)
-      $state.loaded()
-    }
-    page++
-  }
-  catch (error) {
-    $state.error()
-  }
-}
-
-const newsList = ref([])
-const nextPage = ''
-const newCardleftItem = ref(null)
-const newCardRightItem = ref(null)
-const doubleCount = computed(() =>
-  newsList.value.filter(item => ![newCardleftItem.value.article_id, newCardRightItem.value.article_id].includes(item.article_id)),
-)
-
-function changeCard(item) {
-  newCardleftItem.value = item
-  const leftIndex = newsList.value.findIndex(val => val.link === item.link)
-
-  if (newsList.value[leftIndex + 1])
-    newCardRightItem.value = newsList.value[leftIndex + 1]
-
-  else
-    newCardRightItem.value = newsList.value[0]
-}
-const newNewsList = ref ([])
-
-function searchCard(val = '') {
-// https://newsdata.io/api/1/news?apikey= pub_416247a8e9c8c25b857dc9c8602f112ea7358 &q=pegasus&language=en
-  axios({
-    url: `https://server.bigfullnews.xyz/ads/getNewsByCount`,
-    method: 'get',
-    params: {
-      channel: 'sls',
-      count: 10,
-      q: val,
-    },
-  }).then((response) => {
-    newsList.value = response.data.data.filter(item => item.image_url)
-    newCardleftItem.value = newsList.value[0]
-    newCardRightItem.value = newsList.value[1]
-  })
-}
-// http://192.168.0.118:8081/ads/getNewsByPage?channel=xx&start=xx&end=xx
+const route = useRoute()
+const router = useRouter()
+const scrollTop = ref(0)
 let nowcount = 0
 const num = 12
+let noMoreNews = ref(false)
+const newNewsList = ref ([])
+const title = ref('')
+let rootlazyDom = ref(null)
+const envDomain = import.meta.env.VITE_DOMAIN
 
-function getNews($state) {
+onBeforeRouteLeave((to, from) => {
+  scrollTop.value = document.getElementById('app').scrollTop
+})
+
+onActivated(() => {
+  document.getElementById('app').scrollTop = scrollTop.value
+})
+
+function getNews() {
   return axios({
-    url: `https://server.bigfullnews.xyz/ads/getNewsByPage`,
+    url: `https://server.gyhserver.com/ads/getNewsByPage`,
+    // url: `http://192.168.1.124:8081/ads/getNewsByPage`,
     method: 'get',
     params: {
-      channel: 'sls',
-      count: 12,
+      channel: import.meta.env.VITE_BUILD_SITE,
+      count: num,
       start: nowcount,
       end: num + nowcount,
     },
   },
-
   ).then(async (response) => {
     const filterResult = response.data.data
-
-    // nextPage = response.data.nextPage
-    // newCardleftItem.value = filterResult[0]
-    // newCardRightItem.value = filterResult[1]
-    newsList.value = filterResult
-    if (filterResult.length < 4 || filterResult === 'No more data.') {
-      $state.complete()
+    if (filterResult.length<4) {
+      noMoreNews.value =true
     }
-    else {
-      for (let i = 0; i < newsList.value.length; i += 4) {
-        if (i + 4 <= newsList.value.length) {
-          const chunk = newsList.value.slice(i, i + 4)
-          nowcount += 4
-          newNewsList.value.push(chunk)
-        }
+    for (let i = 0; i < filterResult.length; i += 4) {
+      if (i + 4 <= filterResult.length) {
+        const chunk = filterResult.slice(i, i + 4)
+        nowcount += 4
+        newNewsList.value.push(chunk)
       }
-      if ($state)
-        $state.loaded()
-      console.log(newNewsList.value)
     }
-  }).catch((error) => {
-    console.log(error)
-    $state.error()
   })
 }
+getNews()
+
 function formatDate(dateString) {
   const date = new Date(dateString)
   const now = new Date()
@@ -119,12 +69,27 @@ function formatDate(dateString) {
   else
     return `${diffInDays} days ago`
 }
-function toLink(url) {
-  // 链接跳转
-  // window.open(url)
+function toLink(item) {
+  axios({
+    method: 'get',
+    url: 'https://server.gyhserver.com/ads/getNewsArticle',
+    // url: 'http://192.168.1.124:8081/ads/getNewsArticle',
+    data: {
+      article: true,
+      httpResponseBody: true,
+      articleOptions: { extractFrom: 'httpResponseBody' },
+    },
+    params: {
+      channel: import.meta.env.VITE_BUILD_SITE,
+      articleId: item.article_id,
+    },
+  },
+  ).then((response) => {
+    router.push(`/singlePage/${item.article_id}`)
+  })
 }
-const title = ref('')
-title.value = getTopLevelDomainWithoutPort()
+title.value = import.meta.env.VITE_TITLE
+
 function getTopLevelDomainWithoutPort() {
   const url = window.location.href
   const domain = url.split('/')[2]
@@ -134,78 +99,151 @@ function getTopLevelDomainWithoutPort() {
 document.getElementById('webTitle').innerHTML = getTopLevelDomainWithoutPort()
 
 onMounted(() => {
-  // getNews()
-  //   import('../../nodeServe/newsList.json').then((response) => {
-  //     newsList.value = response.default.sort(() => (Math.random() - 0.5)).splice(0, 10).filter(item => item.image_url)
-
-  //     // nextPage = response.data.nextPage
-  //     newCardleftItem.value = newsList.value[0]
-  //     newCardRightItem.value = newsList.value[1]
-  //   })
+  rootlazyDom.value = document.querySelector('.webMainTitle')?.parentNode?.parentNode
+  console.log(rootlazyDom.value)
 })
 
-// axios.get(`https://api.goperigon.com/v1/all?source=cnn.com&sortBy=date&apiKey=81171d2f-df92-4c4e-b070-4de0243a6ae2`).then((response) => {
-//   console.log(response.data)
-// })
+
 </script>
 
 <template>
-  <div class="mainPage">
-    <h3 class="title" style="text-transform: uppercase;font-weight: bold;">
-      {{ title }}
-    </h3>
-
-    <div class="AdvertisingCard">
-      <h1>Advertising window</h1>
-    </div>
-    <div v-for="group, index in newNewsList" :key="index" class="card">
-      <div class="top" @click="toLink(group[0].link)">
-        <div class="bgc">
-          <img v-lazy="group[0].image_url" alt="">
-        </div>
-        <div class="message">
-          <RouterLink :to="`/singlePage/${group[0].article_id}`">
-            <h2>{{ group[0].title }}</h2>
-          </RouterLink>
-
-          <div class="info">
-            <div class="keyWord">
-              {{ group[0].creator?.join(' ') }}
-            </div>
-            <div class="time">
-              {{ group[0].pubDate.split(' ')[0] }}
-            </div>
-          </div>
-        </div>
+  <div id="image-scroll-container" class="mainPage">
+    <n-infinite-scroll style=" height: 100%;" :distance="1000" @load="getNews">
+      <h3 class="webMainTitle" style="text-transform: uppercase;font-weight: bold;">
+        {{ title }}
+      </h3>
+      <div class="AdvertisingCard">
+        <h1>Advertising window</h1>
+      <!-- {{ rootlazyDom?.innerHTML }} -->
       </div>
+      <div v-for="group, index in newNewsList" :key="index" class="card">
+        <div class="top" @click="toLink(group[0])">
+          <n-image
+          :preview-disabled = "true"
+          class="cardImg"
+            lazy
+            :src="group[0].image_url "
+            :intersection-observer-options="{
+              root: rootlazyDom,
+              rootMargin: '2000px',
+              threshold: 1,
+            }"
+          >
+            <template #placeholder>
+              <div
+                style="
+                   width: 100vw;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #0001;"
+              >
+                Loading
+              </div>
+            </template>
+          </n-image>
 
-      <div class="main">
-        <div v-for="item, index in group.slice(1, 4)" :key="index" class="item" @click="toLink(item.link)">
-          <div class="bgc">
-            <img v-lazy="item.image_url || ' '" alt="">
-          </div>
           <div class="message">
-            <RouterLink :to="`/singlePage/${item.article_id}`">
-              <h4>{{ item.title }}</h4>
-            </RouterLink>
+            <!-- <RouterLink :to="`/singlePage/${group[0].article_id}`"> -->
+            <h2>{{ group[0].title }}</h2>
+            <!-- </RouterLink> -->
 
             <div class="info">
               <div class="keyWord">
-                {{ group[0].source_id }}
+                {{ group[0].creator?.join(' ') }}
               </div>
               <div class="time">
-                {{ formatDate(group[0].pubDate) }}
+                {{ group[0].pubDate.split(' ')[0] }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="main">
+          <div v-for="item, index in group.slice(1, 4)" :key="index" class="item" @click="toLink(item)">
+              
+
+              <n-image
+          :preview-disabled="true"
+                width="100"
+                height="100"
+                object-fit="cover"
+                lazy
+                :src="item.image_url "
+                :intersection-observer-options="{
+                  root: rootlazyDom,
+                  rootMargin: '2000px',
+                  threshold: 1,
+                }"
+              >
+                <template #placeholder>
+                  <div
+                    style="
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #0001;
+          "
+                  >
+                    Loading
+                  </div>
+                </template>
+              </n-image>
+            <div class="message">
+              <!-- <RouterLink :to="`/singlePage/${item.article_id}`">
+              <h4>{{ item.title }}</h4>
+
+            </RouterLink> -->
+              <div>
+                <h4>{{ item.title }}</h4>
+              </div>
+
+              <div class="info">
+                <div class="keyWord">
+                  {{ item.source_id }}
+                </div>
+                <div class="time">
+                  {{ formatDate(item.pubDate) }}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    <InfiniteLoading @infinite="getNews" />
+      <div v-if="noMoreNews" class="widewrapper subheader">
+          <div class="pageFooter">
+            <span>
+              ©2024 {{ envDomain }} All Rights Reserved
+            </span>
+            <span>
+              <a href="https://www.termsfeed.com/live/bfb91ebb-8c45-4917-b408-0a1437c0e638" target="_blank">Privacy Policy</a>
+            </span>
+            <span>
+              Contact us at : tulaybultak@gmail.com
+            </span>
+          </div>
+        </div>
+    </n-infinite-scroll>
   </div>
 </template>
 
 <style>
+.pageFooter {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0px;
+  color: white;
+  a {
+    color: white;
+    /* 下划线 */
+    text-decoration: underline;
+  }
+}
 img[lazy='loading'] {
   padding: 30px;
   /* 无限旋转 */
@@ -220,7 +258,7 @@ img[lazy='loading'] {
   border: 1px solid;
   margin: 10px 0;
 }
-.title {
+.webMainTitle {
   text-align: center;
 }
 h2 {
@@ -253,11 +291,11 @@ h4 {
   background-color: rgb(190, 190, 190);
   border-radius: 4px;
 
-  white-space: nowrap;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  white-space: nowrap;
   max-width: 100px;
 }
 .time {
@@ -268,23 +306,20 @@ h4 {
 .mainPage {
   max-width: 1000px;
   margin: 0 auto;
+  height: 100vh;
+  overflow: auto;
   .card {
     .top {
       display: flex;
       flex-direction: column;
       align-items: center;
-      .bgc {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      .cardImg{
         width: 100%;
-        background-color: rgb(202, 202, 202);
-        border-radius: 6px;
-        overflow: hidden;
-      }
-      img {
+        ::v-deep img {
         width: 100%;
       }
+      }
+      
       img[lazy='loading'] {
         width: 100px;
         /* 无限旋转 */

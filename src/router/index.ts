@@ -3,18 +3,27 @@ import mainPage from '../views/mainPage.vue'
 import SinglePage from '../views/SinglePage.vue'
 
 const router = createRouter({
-
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition)
+      return savedPosition
+  },
   routes: [
     {
       path: '/',
       name: 'mainPage',
       component: mainPage,
+      meta: {
+        keepAlive: true,
+      },
     },
     {
       path: '/singlePage/:id',
-      name: 'singlePage',
+      name: 'SinglePage',
       component: SinglePage,
+      meta: {
+        keepAlive: true,
+      },
     },
     {
       path: '/:pathMatch(.*)*',
