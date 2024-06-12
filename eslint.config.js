@@ -27,7 +27,7 @@ export default antfu({
   //   quotes: 'single', // or 'double'
   // },
 }, {
-  rules: { 'no-console': 'off', 'vue/html-self-closing': 'off' },
+  rules: { 'no-console': 'off', 'vue/html-self-closing': 'off', 'prefer-const': 'off' },
 })
 
 // 如果使用antfu/eslint-config的配置单，

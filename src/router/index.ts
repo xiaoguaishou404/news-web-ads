@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import mainPage from '../views/mainPage.vue'
 import SinglePage from '../views/SinglePage.vue'
+import SinglePageTest from '../views/SinglePageTest.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,6 +22,13 @@ const router = createRouter({
       path: '/singlePage/:id',
       name: 'SinglePage',
       component: SinglePage,
+      meta: {
+        keepAlive: true,
+      },
+    }, {
+      path: '/SinglePageTest/:id?',
+      name: 'SinglePageTest',
+      component: SinglePageTest,
       meta: {
         keepAlive: true,
       },

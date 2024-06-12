@@ -2,134 +2,99 @@ const fs = require('node:fs')
 const path = require('node:path')
 const axios = require('axios')
 const utils = require('./utils.js')
-//  图片会多出一部分，正文需要过滤掉一部分乱码
+//  正文需要过滤掉一部分乱码
 
-const newsListJsonPath = path.resolve(__dirname, '../newsList.json')
+const articleCatalogPath = path.resolve(__dirname, './assets/article')
+const newsListCatalogPath = path.resolve(__dirname, './assets/newsList')
 const cacheFilePath = path.resolve(__dirname, './cache.json')
-let nextPage
-// 一分钟30条
-let timer
-const downloadErrCount = 5
+const settingFilePath = path.resolve(__dirname, './setting.json')
+const settingConfig = JSON.parse(utils.FileInitialization(settingFilePath, JSON.stringify({ newListFilemaxLength: 1000, articleFilemaxLength: 1000, awaitGetnewsControlTime: 60000 })))
+
+const cacheProxy = utils.jsonFileProxy(cacheFilePath, { downloadErrCount: 5 })
+
+let articleProxy = utils.jsonFileProxy(articleJsonPath(getCatalogMessage(articleCatalogPath).maxJsonNum), {})
+let newsListProxy = utils.jsonFileProxy(newsListJsonPath(getCatalogMessage(newsListCatalogPath).maxJsonNum), [])
+
 const newsdataApi = 'https://newsdata.io/api/1/news?apikey=pub_416247a8e9c8c25b857dc9c8602f112ea7358'
-const newsdataApi2 = 'https://newsdata.io/api/1/news?apikey=pub_42301702e574068bcb7a31cf745c250e5b8a0'
+// const newsdataApi = 'https://newsdata.io/api/1/news?apikey=pub_42301702e574068bcb7a31cf745c250e5b8a0'
 const countryList = ['de', 'ru', 'gb', 'us', 'wo']
 const categoryList = ['business', 'crime', 'domestic', 'education', 'entertainment', 'environment', 'food', 'health', 'lifestyle', 'other', 'politics', 'science', 'sports', 'technology', 'top', 'tourism', 'world']
-const num = 0
-let cache = null
-let maxJsonNum = 0
-let articleJsonFiles = []
-let articleCatalogPath = path.resolve(__dirname, './assets/article')
-let newsListCatalogPath = path.resolve(__dirname, './assets/newsList')
+
+function articleJsonPath(pathUrl) {
+  return path.resolve(__dirname, `./assets/article/${pathUrl}.json`)
+}
+
+function newsListJsonPath(pathUrl) {
+  return path.resolve(__dirname, `./assets/newsList/${pathUrl}.json`)
+}
 
 function getCatalogMessage(CatalogPath) {
-  let JsonfilesNameList = fs.readdirSync(CatalogPath).filter(file => file.endsWith('.json'))
-  maxJsonNum = JsonfilesNameList.reduce((max, item) => parseInt(item) > max ? parseInt(item) : max, 0)
+  const JsonfilesNameList = fs.readdirSync(CatalogPath).filter(file => file.endsWith('.json'))
 
   return {
     fileList: JsonfilesNameList,
-    maxJsonNum: JsonfilesNameList.reduce((max, item) => parseInt(item) > max ? parseInt(item) : max, 0),
+    maxJsonNum: JsonfilesNameList.reduce((max, item) => Number.parseInt(item) > max ? Number.parseInt(item) : max, 0),
   }
 }
-
-
-function updatearticleJsonFilesmaxNum() {
-  fs.readdir(path.resolve(__dirname, './assets/article'), (err, files) => {
-    if (err) {
-      console.error('无法读取目录：', err)
-      return
-    }
-
-    articleJsonFiles = files.filter(file => file.endsWith('.json'))
-  })
-
-  maxJsonNum = articleJsonFiles.reduce((max, item) => parseInt(item) > max ? parseInt(item) : max, 0)
-}
-// updatearticleJsonFilesmaxNum()
 
 async function getnews() {
   console.log('开始获取新闻')
-  await utils.awaitGetnewsControl(60000)
+  await utils.awaitGetnewsControl(settingConfig.awaitGetnewsControlTime)
 
-  // cache = JSON.parse(utils.FileInitialization(cacheFilePath, JSON.stringify({
-  //   newsListJsonFIleNameNow: '0.json',
-  //   newsListJsonFIleIndex: 0,
-  // })))
-
-  let newsList = JSON.parse(utils.FileInitialization(path.resolve(__dirname, `./assets/newsList/${getCatalogMessage(newsListCatalogPath).maxJsonNum}.json`), JSON.stringify([])))
-  console.log('newsList:' + newsList.length);
-  if (newsList.length >= 1000) {
-    // cache.newsListJsonFIleIndex += 1
-
-    // fs.writeFileSync(cacheFilePath, JSON.stringify(cache), (err) => {
-    //   if (err)
-    //     throw err
-    // })
-
-
-
-    newsList = JSON.parse(utils.FileInitialization(path.resolve(__dirname, `./assets/newsList/${getCatalogMessage(newsListCatalogPath).maxJsonNum + 1}.json`), JSON.stringify([])))
-  }
   axios({
     method: 'get',
     url: newsdataApi,
     timeout: 20000,
     params: {
-      page: nextPage,
+      page: cacheProxy.nextPage,
+      language: 'en',
     },
     validateStatus(code) {
       return true
       // 所有的状态码都promise都会成功，不会进入catch
     },
   }).then((response) => {
- 
     if (response.data.status === 'success') {
-      nextPage = response.data.nextPage
-      filternews(response.data.results, newsList).then(() => {
-        // console.log(666);
+      cacheProxy.nextPage = response.data.nextPage
+      filternews(response.data.results).then(() => {
         getnews()
       })
     }
     else {
       if (response.status === 429) {
-        downloadErrCount -= 1
-        if (downloadErrCount < 0) {
-          // clearInterval(timer)
+        cacheProxy.downloadErrCount -= 1
+        if (cacheProxy.downloadErrCount < 0)
           return
-        }
       }
-     
+
       getnews()
     }
-  }).catch(()=>{
-    console.log('news api error');
+  }).catch(() => {
+    console.log('news api error')
     getnews()
   })
 }
 
-function filternews(list, newsList) {
+function filternews(list) {
   return new Promise((resolve) => {
-    // console.log(33333);
-    // console.log(list.map(item => item.article_id));
-    // console.log(list.map(item => item.image_url));
-    downloadImages(list.filter(item => item.image_url)).then((ImagesList) => {
+    downloadImages(list.filter(item => item.image_url)).then((successImagesList) => {
+      downloadArticleBodys(successImagesList).then((successArticleBodysList) => {
+        successArticleBodysList.forEach((item) => {
+          if (newsListProxy.__target__.length >= settingConfig.newListFilemaxLength)
+            newsListProxy = utils.jsonFileProxy(newsListJsonPath(getCatalogMessage(newsListCatalogPath).maxJsonNum + 1), [])
 
-      // console.log(11);
-      // console.log(ImagesList.map(item => item.article_id));
+          newsListProxy.push(item)
+        })
 
-
-      downloadArticleBodys(ImagesList).then((ArticleBodysList) => {
-
-        // console.log(22);
-        // console.log(ArticleBodysList);
-
-        newsList.push(...ArticleBodysList)
-        fs.writeFileSync(path.resolve(__dirname, `./assets/newsList/${getCatalogMessage(newsListCatalogPath).maxJsonNum}.json`), JSON.stringify(newsList))
+        successImagesList.filter(item => !successArticleBodysList.some(data => data.article_id === item.article_id)).forEach((item) => {
+          utils.deleteFiles(path.resolve(__dirname, `./assets/img`), item.article_id)
+        })
         resolve()
       })
     })
   })
 }
-function downloadArticleBody(url, articleId) {
+function downloadArticleBody(item) {
   return axios(
     {
       method: 'post',
@@ -137,69 +102,30 @@ function downloadArticleBody(url, articleId) {
       timeout: 20000,
       validateStatus(code) {
         return true
-        // 所有的状态码都promise都会成功，不会进入catch
       },
       data: {
-        url,
+        url: item.link,
         article: true,
       },
       auth: { username: '64ed11ba820a4e9dbfa432094cc4fab6' },
     },
   ).then((response) => {
     if (response.data.statusCode === 200) {
+      if (Object.keys(articleProxy.__target__).length >= settingConfig.articleFilemaxLength)
+        articleProxy = utils.jsonFileProxy(articleJsonPath(getCatalogMessage(articleCatalogPath).maxJsonNum + 1), {})
+      articleProxy[item.article_id] = response.data.article
 
-
-      // if (getCatalogMessage(articleCatalogPath ).fileList.length === 0) {
-      //   articleJson = JSON.parse(utils.FileInitialization(path.resolve(__dirname, `./assets/article/${getCatalogMessage(articleCatalogPath ).maxJsonNum}.json`), JSON.stringify({})))
-      //   updatearticleJsonFilesmaxNum()
-      // }
-
-      // if (articleJsonFiles.length > 0) {
-      //   articleJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, `./assets/article/${maxJsonNum}.json`)))
-
-      //   if (Object.keys(articleJson).length >= 10) {
-      //     articleJson = JSON.parse(utils.FileInitialization(path.resolve(__dirname, `./assets/article/${maxJsonNum + 1}.json`), JSON.stringify([])))
-      //     updatearticleJsonFilesmaxNum()
-      //   }
-      //   articleJson[articleId] = response.data.article
-
-      //   fs.writeFileSync(path.resolve(__dirname, `./assets/article/${maxJsonNum}.json`), JSON.stringify(articleJson), (err) => {
-      //     if (err)
-      //       throw err
-      //   })
-      // }
-
-
-
-      articleJson = JSON.parse(utils.FileInitialization(path.resolve(__dirname, `./assets/article/${getCatalogMessage(articleCatalogPath).maxJsonNum}.json`), JSON.stringify({})))
-      console.log('articleJson:' + Object.keys(articleJson).length);
-
-
-
-      if (Object.keys(articleJson).length >= 1000) {
-        articleJson = JSON.parse(utils.FileInitialization(path.resolve(__dirname, `./assets/article/${getCatalogMessage(articleCatalogPath).maxJsonNum + 1}.json`), JSON.stringify({})))
-      }
-      articleJson[articleId] = response.data.article
-
-      fs.writeFileSync(path.resolve(__dirname, `./assets/article/${getCatalogMessage(articleCatalogPath).maxJsonNum}.json`), JSON.stringify(articleJson), (err) => {
-        if (err)
-          throw err
-      })
-      return articleId
-
+      return item
     }
-    // console.log('errorArticleBody', articleId);
-
   }).catch(() => {
-    // console.log('errorArticleBody', articleId);
 
   })
 }
-function downloadImg(url, fileName) {
+function downloadImg(item) {
   return axios(
     {
       method: 'get',
-      url,
+      url: item.image_url,
       timeout: 15000,
       responseType: 'stream',
       validateStatus(code) {
@@ -209,60 +135,44 @@ function downloadImg(url, fileName) {
     },
   ).then((response) => {
     if (response.status === 200) {
+      // console.log(response.data.readable)
       const contentType = response.headers['content-type']
-      const fileExtension = contentType.split('/')[1]
-      response.data.pipe(fs.createWriteStream(path.resolve(__dirname, `./assets/img/${fileName}.${fileExtension}`)))
-      return fileName
+      const fileExtension = contentType.split('/')[1].split('+')[0].split(';')[0]
+      const writeStream = fs.createWriteStream(path.resolve(__dirname, `./assets/img/${item.article_id}.${fileExtension}`))
+      response.data.pipe(writeStream)
+      return item
     }
-    // console.log('imgerror', fileName);
   }).catch(() => {
-    // console.log('imgerror', fileName);
 
   })
 }
-async function downloadArticleBodys(list) {
+
+async function downloadImages(list) {
   const downloadPromises = list.map((item) => {
-    return downloadArticleBody(item.link, item.article_id)
+    return downloadImg(item)
   })
 
   try {
-    const downloadedUrls = await Promise.all(downloadPromises)
-    // console.log(88888);
-
-    // console.log(downloadedUrls);
-    // console.log(99);
-
-    // 从列表中移除下载失败的 URL
-    const filteredUrls = list.filter(url => downloadedUrls.includes(url.article_id))
-    return filteredUrls
+    let listResults = await Promise.all(downloadPromises)
+    return listResults.filter(item => item)
   }
   catch (error) {
-    // 处理错误
-    // console.error(error)
+    console.error(error)
     return []
   }
 }
-async function downloadImages(urls) {
-  const downloadPromises = urls.map((url) => {
-    return downloadImg(url.image_url, url.article_id)
+
+async function downloadArticleBodys(list) {
+  const downloadPromises = list.map((item) => {
+    return downloadArticleBody(item)
   })
 
   try {
-    const downloadedUrls = await Promise.all(downloadPromises)
-
-    // 从列表中移除下载失败的 URL
-    const filteredUrls = urls.filter(url => downloadedUrls.includes(url.article_id))
-    return filteredUrls
+    let listResults = await Promise.all(downloadPromises)
+    return listResults.filter(item => item)
   }
   catch (error) {
-    // 处理错误
-    // console.error(error)
     return []
   }
 }
 getnews()
-// timer = setInterval(getnews, 1000)
-// module.exports = function () {
-//   timer = setInterval(getnews, 60000)
-// }
-

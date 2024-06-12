@@ -1,0 +1,5 @@
+{
+  "newListFilemaxLength": 1000,
+  "articleFilemaxLength": 1000,
+  "awaitGetnewsControlTime": 60000
+}

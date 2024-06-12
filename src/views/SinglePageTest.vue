@@ -1,18 +1,114 @@
 <script setup lang="ts">
-import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
-import { onActivated, onMounted, ref, watch } from 'vue'
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
+import { onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import axios from 'axios'
 
+import articleListJson from '../../nodeServe/assets/article/0.json'
+import newsListJson from '../../nodeServe/assets/newsList/0.json'
+
+// const newsListJson = newsListJson.filter(item => item.language === 'english')
+// console.log(newsListJson.filter(item => item.article_id === 'f59c8acb3a8daa5f98e868c080be45aa'))
+
+const errorIdList = [
+  'eec57b2e7d5a55d9353c02d6040b5aaa',
+  'f03a323e42a3537d24ce68cc9a127641',
+  'd58f15e4970cfc3da76228ee4fa4b176',
+  '20f304b76889df632b40c847e2ca5534',
+  'cba9380b4265f58296208938998e4de8',
+  '5086a1f4e91b29bc7eca423fbc093bd6',
+  '2365e919e6b94a53a37d7dce04ef1829',
+  '6c3b7437f25efcc159b44130e62f68c4',
+  '4433d6cfb938ce96def2686f64c369ad',
+  '3d0314e7c1780eb61cd8878526e0f8a1',
+  '0ad0ccf8c3ee3e8a5c7d0ba0fb7f9980',
+  'd291917816fbb18050801ef1d8b092fb',
+  '7f6b6fb8d663e293cabfddec41ced33f',
+  'c0f4ba23878783f88a79f509ddfae0bc',
+  '315895727600e2347e404247cb14dab2',
+  '803da635e04b5f8c01692d8d1f3d0f6c',
+  'c562ed1c881a2df72ac03d34c99eaac2',
+  '6daf24d90b62a0d231e431b701941acd',
+  'b291cb5783acb04090611b74014a99f4',
+  '0879c303d84dbeeeb5170391047c374c',
+  '4c3c4ec144d5583310c09eb927958a07',
+  '262f07ee1680cffaaaa3558773160d32',
+  'ee2f6e7d66ab720e79e25d0cf71c32f3',
+  '9d10c982174c61296d9e2fc51808d9d0',
+  'f1a1f6472396ec7588029cc3e7c5b409',
+  '0c0f759c47ece301ec4df254c4cbae93',
+  '9a821a2b164b9134536957eec93ca017',
+  '5e274605ee3b50b22b6dd61257ce9b90',
+  '35b29b6d30a71800f1a02704226cfaca',
+  '89cded409db2b6dac41b412c1292321a',
+  'cde2fae28905e51c1786ef4d8989518e',
+  'ed21751a6dbfe70b1550f8d5fe2f4e42',
+  '5d3f499c43bbb998a0f4b5a34e20ebef',
+  '6b5ba7f258c527600dbe20aa21befe88',
+  '2baa83a826635f6c254b809cfac88c22',
+  '33f274de4ad5920f61c0695e7cebc907',
+  'bf65051e4ff6e0956bdbcfcc7a821a0b',
+  'b774d3d9ea2d73f866645dc3d3860f2c',
+  '9c4d95df9d8df5b5b1ec2732b094fc94',
+  '6c754883ea59a7449e61ccd4ef362353',
+  'edd9b52fe9176c87ff0b4b1d4c5bae7b',
+  '8a427ab1b62b75d8ffa7b0ff916f98f2',
+  'be514a973b46a12ea1ec5a61e39e0236',
+  '5498307e5067f0b0f6531d17e21fe234',
+  '084ec74a833a0b10cbbbc288c6c29ea0',
+  '8830e2d87a7c4caa6986412c289cd1e3',
+  '689f0fa6a6e0fb74074092ff6c3141f2',
+  '6a585cfe38916a2b8cc34fc583091982',
+  'ad30f1b49082979e6cade0f3465a43a0',
+  '850c6533e4374d8ba204d6364a1e9775',
+  '3e567baff3b8cb8ef19e37fd3199aeb5',
+  'cb20a5b475e9db94b92373ac41b79efc',
+  'f59c8acb3a8daa5f98e868c080be45aa',
+  'ef24090f7fa7ae340ba10d78d5478181',
+  '250815881f0e9c4a558acae1531112d9',
+  '383405b449a2cc1ef61ac5395765d9c1',
+  '709c737ecabe6f27bc80150c28706e3b',
+]
+
+const logList = newsListJson.filter(item => !errorIdList.includes(item.article_id))
+console.log(logList)
+
+console.log(JSON.stringify(logList))
+
+
+
 const router = useRouter()
+const route = useRoute()
+
 const newCardleftItem = ref(null)
 const newCardRightItem = ref(null)
 
-const route = useRoute()
 const newsList = ref([])
 const articleData = ref({})
 const ArticleBody = ref('')
 const articleBodyref = ref(null)
 const scrollTop = ref(0)
+if (!route.params.id)
+  router.push({ path: `/SinglePageTest/${newsListJson[0].article_id}` })
+else
+  getActicleBody()
+
+function keydownFun(event) {
+  if (event.key === '1') {
+    if (!localStorage.getItem('error-article_id'))
+      localStorage.setItem('error-article_id', JSON.stringify([]))
+
+    const idList = JSON.parse(localStorage.getItem('error-article_id'))
+    idList.push(route.params.id)
+
+    localStorage.setItem('error-article_id', JSON.stringify(Array.from(new Set(idList))))
+
+    nextSinglePage()
+  }
+  if (event.key === '2')
+    nextSinglePage()
+}
+
+document.addEventListener('keydown', keydownFun)
 
 onBeforeRouteLeave((to, from) => {
   scrollTop.value = document.getElementById('app').scrollTop
@@ -21,64 +117,44 @@ onBeforeRouteLeave((to, from) => {
 onActivated(() => {
   document.getElementById('app').scrollTop = scrollTop.value
 })
+// onBeforeUnmount(() => {
+//   // document.removeEventListener('keydown', keydownFun)
+// })
+onBeforeRouteUpdate ((to, from) => {
+  document.removeEventListener('keydown', keydownFun)
+})
+onMounted(() => {
+  window.scrollTo(0, 0)
+})
+watch(ArticleBody, () => {
+  articleBodyref.value.querySelectorAll('p').forEach((item: any, index) => {
+    if (index % 5 === 0 && index !== 0) {
+      const style = window.getComputedStyle ? window.getComputedStyle(item, null) : null || item.currentStyle
 
-function getActicleBody() {
-  // window.scrollTo(0, 0)
-
-  axios({
-    method: 'get',
-    url: 'https://server.gyhserver.com/ads/getNewsArticle',
-    // url: 'http://192.168.1.124:8081/ads/getNewsArticle',
-    data: {
-      article: true,
-      httpResponseBody: true,
-      articleOptions: { extractFrom: 'httpResponseBody' },
-    },
-    params: {
-      channel: import.meta.env.VITE_BUILD_SITE,
-      articleId: route.params.id,
-    },
-
-  },
-
-  ).then((response: any) => {
-    const article = response.data.data.articleBodyHtml
-
-    if (response.data) {
-      if (!article) {
-        console.log(article)
-        console.log(response.data)
-
-        // window.open(response.data.data.url)
-        // sessionStorage.removeItem(window.location.href)
-        window.location.href = response.data.data.url
-        router.replace({ path: '/' })
-      }
-      else {
-        ArticleBody.value = removeElementsFromHtml(article)
-        articleData.value = response.data.data
-
-        setTimeout(() => {
-          articleBodyref.value.querySelectorAll('p').forEach((item: any, index) => {
-            if (index % 5 === 0 && index !== 0) {
-              const style = window.getComputedStyle ? window.getComputedStyle(item, null) : null || item.currentStyle
-              // console.log(Number.parseFloat(style.width))
-              // console.log(window.screen.width * 0.8)
-
-              if (Number.parseFloat(style.width) < window.screen.width * 0.8)
-                return
-              const advertisingDiv = document.createElement('div')
-              advertisingDiv.className = 'AdvertisingCard'
-              advertisingDiv.textContent = 'advertising'
-              item.parentNode.insertBefore(advertisingDiv, item)
-              // 滚动到顶部
-              // window.scrollTo(0, 0)
-            }
-          })
-        })
-      }
+      if (Number.parseFloat(style.width) < window.screen.width * 0.8)
+        return
+      const advertisingDiv = document.createElement('div')
+      advertisingDiv.className = 'AdvertisingCard'
+      advertisingDiv.textContent = 'advertising'
+      item.parentNode.insertBefore(advertisingDiv, item)
+      // 滚动到顶部
+      // window.scrollTo(0, 0)
     }
   })
+})
+function nextSinglePage() {
+  let indexNow = 0
+  indexNow = newsListJson.findIndex(item => item.article_id === route.params.id) + 1
+  console.log(indexNow)
+
+  router.push({ path: `/SinglePageTest/${newsListJson[indexNow].article_id}` })
+}
+
+function getActicleBody() {
+  const article = articleListJson[route.params.id].articleBodyHtml
+
+  ArticleBody.value = removeElementsFromHtml(article)
+  articleData.value = articleListJson[route.params.id]
 }
 
 function removeElementsFromHtml(htmlString) {
@@ -122,9 +198,7 @@ function convertDatetimeToString(datetimeStr) {
   const yearMonthDay = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
   return yearMonthDay
 }
-onMounted(() => {
-  getActicleBody()
-})
+
 const nowcount = Math.floor(Math.random() * 40)
 
 const newNewsList = ref([])
@@ -146,7 +220,7 @@ function getNews() {
     newNewsList.value = filterResult
   })
 }
-getNews()
+// getNews()
 function formatDate(dateString) {
   const date = new Date(dateString)
   const now = new Date()
