@@ -90,13 +90,13 @@ function toLink(item) {
 }
 title.value = import.meta.env.VITE_TITLE
 
-function getTopLevelDomainWithoutPort() {
-  const url = window.location.href
-  const domain = url.split('/')[2]
-  const [topLevelDomain, port] = domain.split(':')
-  return topLevelDomain.split('.').slice(-2).join('.')
-}
-document.getElementById('webTitle').innerHTML = getTopLevelDomainWithoutPort()
+// function getTopLevelDomainWithoutPort() {
+//   const url = window.location.href
+//   const domain = url.split('/')[2]
+//   const [topLevelDomain, port] = domain.split(':')
+//   return topLevelDomain.split('.').slice(-2).join('.')
+// }
+// document.getElementById('webTitle').innerHTML = getTopLevelDomainWithoutPort()
 
 onMounted(() => {
   rootlazyDom.value = document.querySelector('.webMainTitle')?.parentNode?.parentNode
