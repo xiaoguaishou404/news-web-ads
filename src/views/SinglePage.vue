@@ -2,6 +2,7 @@
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { onActivated, onMounted, ref, watch } from 'vue'
 import axios from 'axios'
+import utils from '@/utils.js'
 
 const router = useRouter()
 const newCardleftItem = ref(null)
@@ -68,9 +69,16 @@ function getActicleBody() {
               if (Number.parseFloat(style.width) < window.screen.width * 0.8)
                 return
               const advertisingDiv = document.createElement('div')
-              advertisingDiv.className = 'AdvertisingCard'
-              advertisingDiv.textContent = 'advertising'
+              // advertisingDiv.className = 'AdvertisingCard'
+              // advertisingDiv.textContent = 'advertising'
+              
+
+              advertisingDiv.setAttribute('id', utils.getDIvIDCount())
               item.parentNode.insertBefore(advertisingDiv, item)
+              console.log(advertisingDiv.getAttribute('id'));
+
+              googletag.cmd.push(() => { googletag.display(advertisingDiv.getAttribute('id')) })
+
               // 滚动到顶部
               // window.scrollTo(0, 0)
             }
@@ -201,9 +209,9 @@ const envDomain = import.meta.env.VITE_DOMAIN
       </div>
     </div>
 
-    <div class="AdvertisingCard">
+    <!-- <div class="AdvertisingCard">
       <h1>advertising</h1>
-    </div>
+    </div> -->
     <div class="widewrapper main">
       <div class="container">
         <div class="row">

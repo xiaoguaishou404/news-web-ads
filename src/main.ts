@@ -17,6 +17,7 @@ import error from '@/assets/img/error.jpg'
 
 import '@/assets/css/style.css'
 import './assets/index.css'
+import utils from './utils'
 
 const app = createApp(App)
 
@@ -43,5 +44,20 @@ app.use(createPinia ())
 app.use(router)
 app.use(ElementPlus)
 app.use(naive)
+
+app.directive('custom-ads', {
+  mounted(el, binding) {
+    // :id="utils.getDIvIDCount()"
+    el.setAttribute('id', utils.getDIvIDCount())
+    console.log(el.getAttribute('id'))
+
+    googletag.cmd.push(() => { googletag.display(el.getAttribute('id')) })
+    // googletag.cmd.push(() => {
+    //   googletag.pubads().refresh()
+    // })
+
+    // binding.value
+  },
+})
 
 app.mount('#app')
